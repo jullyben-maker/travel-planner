@@ -21,11 +21,17 @@ function initMap() {
   markers.push(defaultMarker);
 
   setupSearch();
+  showInfo("地圖已載入，可以搜尋景點。");
 }
 
 function setupSearch() {
   const input = document.getElementById("placeInput");
   const button = document.getElementById("addPlaceBtn");
+
+  if (!input || !button) {
+    showInfo("找不到搜尋框或加入按鈕，請檢查 index.html。");
+    return;
+  }
 
   button.addEventListener("click", () => {
     searchPlace(input.value);
@@ -42,9 +48,11 @@ function searchPlace(query) {
   const keyword = query.trim();
 
   if (!keyword) {
-    alert("請輸入景點名稱");
+    showInfo("請先輸入景點名稱。");
     return;
   }
+
+  showInfo("正在搜尋：「" + keyword + "」...");
 
   const request = {
     query: keyword,
@@ -52,8 +60,13 @@ function searchPlace(query) {
   };
 
   service.findPlaceFromQuery(request, (results, status) => {
-    if (status !== google.maps.places.PlacesServiceStatus.OK || !results || !results[0]) {
-      alert("找不到景點，請換一個關鍵字");
+    if (status !== google.maps.places.PlacesServiceStatus.OK) {
+      showInfo("搜尋失敗，狀態：" + status);
+      return;
+    }
+
+    if (!results || !results[0]) {
+      showInfo("找不到景點，請換一個關鍵字。");
       return;
     }
 
@@ -63,6 +76,11 @@ function searchPlace(query) {
 }
 
 function addPlace(place) {
+  if (!place.geometry || !place.geometry.location) {
+    showInfo("這個景點沒有座標資料。");
+    return;
+  }
+
   const location = place.geometry.location;
 
   map.setCenter(location);
@@ -77,21 +95,33 @@ function addPlace(place) {
   markers.push(marker);
 
   const placeList = document.getElementById("placeList");
+
   const card = document.createElement("div");
   card.className = "place-card";
   card.innerHTML = `
     <strong>${place.name}</strong>
     <small>${place.formatted_address || "未提供地址"}</small>
   `;
+
   placeList.appendChild(card);
 
-  const placeInfo = document.getElementById("placeInfo");
-  placeInfo.innerHTML = `
+  showInfo(`
     <p><strong>名稱：</strong>${place.name}</p>
     <p><strong>地址：</strong>${place.formatted_address || "未提供地址"}</p>
     <p><strong>評分：</strong>${place.rating || "尚無評分"}</p>
     <p><strong>Place ID：</strong>${place.place_id}</p>
-  `;
+  `);
+}
+
+function showInfo(message) {
+  const placeInfo = document.getElementById("placeInfo");
+
+  if (!placeInfo) {
+    console.log(message);
+    return;
+  }
+
+  placeInfo.innerHTML = message;
 }
 
 window.initMap = initMap;
