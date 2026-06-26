@@ -14,8 +14,14 @@
 
   <main class="layout">
     <section class="panel">
-      <h2>行程景點</h2>
-      <p>下一步會加入景點搜尋與新增功能。</p>
+<h2>行程景點</h2>
+
+<div class="search-box">
+  <input id="placeInput" type="text" placeholder="搜尋景點，例如：國立臺灣美術館" />
+  <button id="addPlaceBtn">加入</button>
+</div>
+
+<div id="placeList"></div>
     </section>
 
     <section class="panel">
@@ -24,17 +30,19 @@
     </section>
 
     <section class="panel">
-      <h2>景點資訊</h2>
-      <p>目前測試：Google Maps 是否能成功載入。</p>
+<h2>景點資訊</h2>
+<div id="placeInfo">
+  <p>搜尋並加入景點後，這裡會顯示景點資訊。</p>
+</div>
     </section>
   </main>
 
   <script src="script.js"></script>
 
-  <script
-    src="https://maps.googleapis.com/maps/api/js?key=AIzaSyDo0jDs1143sHcUI359D194SlX6mDzWmiM&callback=initMap"
-    async
-    defer>
-  </script>
+<script
+  src="https://maps.googleapis.com/maps/api/js?key=AIzaSyDo0jDs1143sHcUI359D194SlX6mDzWmiM&libraries=places&callback=initMap&language=zh-TW&region=TW"
+  async
+  defer>
+</script>
 </body>
 </html>
