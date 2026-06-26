@@ -56,3 +56,43 @@ header h1 {
     height: 360px;
   }
 }
+.search-box {
+  display: flex;
+  gap: 8px;
+  margin-bottom: 16px;
+}
+
+.search-box input {
+  flex: 1;
+  padding: 12px;
+  border: 1px solid #d1d5db;
+  border-radius: 10px;
+  font-size: 15px;
+}
+
+.search-box button {
+  padding: 12px 16px;
+  border: none;
+  border-radius: 10px;
+  background: #2563eb;
+  color: white;
+  cursor: pointer;
+  font-size: 15px;
+}
+
+.place-card {
+  border: 1px solid #e5e7eb;
+  border-radius: 14px;
+  padding: 14px;
+  margin-bottom: 12px;
+  background: #f9fafb;
+}
+
+.place-card strong {
+  display: block;
+  margin-bottom: 6px;
+}
+
+.place-card small {
+  color: #6b7280;
+}
