@@ -4,267 +4,37 @@
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>Travel Planner</title>
-  <style>
-    body {
-      margin: 0;
-      font-family: Arial, "Microsoft JhengHei", sans-serif;
-      background: #f4f6f8;
-      color: #172033;
-    }
-
-    header {
-      background: #111827;
-      color: white;
-      padding: 20px 28px;
-      display: flex;
-      justify-content: space-between;
-      align-items: center;
-    }
-
-    header h1 {
-      margin: 0;
-      font-size: 24px;
-    }
-
-    .badge {
-      background: #2563eb;
-      padding: 6px 12px;
-      border-radius: 999px;
-      font-size: 14px;
-    }
-
-    .layout {
-      display: grid;
-      grid-template-columns: 280px 1fr 320px;
-      gap: 20px;
-      padding: 20px;
-      min-height: calc(100vh - 80px);
-    }
-
-    .panel {
-      background: white;
-      border-radius: 18px;
-      padding: 20px;
-      box-shadow: 0 8px 24px rgba(0,0,0,0.08);
-    }
-
-    .panel h2 {
-      margin-top: 0;
-      font-size: 20px;
-    }
-
-    .search-box {
-      display: flex;
-      gap: 8px;
-      margin-bottom: 16px;
-    }
-
-    input {
-      flex: 1;
-      padding: 12px;
-      border: 1px solid #d1d5db;
-      border-radius: 10px;
-      font-size: 15px;
-    }
-
-    button {
-      padding: 12px 16px;
-      border: none;
-      border-radius: 10px;
-      background: #2563eb;
-      color: white;
-      cursor: pointer;
-      font-size: 15px;
-    }
-
-    .place-card {
-      border: 1px solid #e5e7eb;
-      border-radius: 14px;
-      padding: 14px;
-      margin-bottom: 12px;
-      background: #f9fafb;
-      cursor: grab;
-    }
-
-    .place-card strong {
-      display: block;
-      margin-bottom: 6px;
-    }
-
-    .place-card small {
-      color: #6b7280;
-    }
-
-    .map-placeholder {
-      height: 520px;
-      border-radius: 18px;
-      background:
-        linear-gradient(135deg, rgba(37,99,235,0.18), rgba(16,185,129,0.18)),
-        repeating-linear-gradient(
-          45deg,
-          #e5e7eb,
-          #e5e7eb 10px,
-          #f3f4f6 10px,
-          #f3f4f6 20px
-        );
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      text-align: center;
-      color: #374151;
-      font-size: 20px;
-      font-weight: bold;
-    }
-
-    .route-item {
-      padding: 12px;
-      border-left: 4px solid #2563eb;
-      background: #eff6ff;
-      border-radius: 10px;
-      margin-bottom: 12px;
-    }
-
-    .info-row {
-      margin-bottom: 14px;
-    }
-
-    .info-label {
-      color: #6b7280;
-      font-size: 13px;
-      margin-bottom: 4px;
-    }
-
-    @media (max-width: 900px) {
-      .layout {
-        grid-template-columns: 1fr;
-      }
-
-      .map-placeholder {
-        height: 360px;
-      }
-    }
-  </style>
+  <link rel="stylesheet" href="style.css" />
 </head>
 <body>
   <header>
     <h1>Travel Planner</h1>
-    <div class="badge">GitHub Pages 版</div>
+    <div class="badge">Google Maps 測試版</div>
   </header>
 
   <main class="layout">
     <section class="panel">
       <h2>行程景點</h2>
-
-      <div class="search-box">
-        <input id="placeInput" placeholder="輸入景點名稱，例如：國立臺灣美術館" />
-        <button id="addBtn">加入</button>
-      </div>
-
-      <div id="placeList">
-        <div class="place-card" draggable="true">
-          <strong>國立臺灣美術館</strong>
-          <small>建議停留 90 分鐘</small>
-        </div>
-        <div class="place-card" draggable="true">
-          <strong>審計新村</strong>
-          <small>建議停留 60 分鐘</small>
-        </div>
-        <div class="place-card" draggable="true">
-          <strong>勤美誠品綠園道</strong>
-          <small>建議停留 90 分鐘</small>
-        </div>
-      </div>
+      <p>下一步會加入景點搜尋與新增功能。</p>
     </section>
 
     <section class="panel">
-      <h2>地圖與路線</h2>
-      <div class="map-placeholder">
-        Google Maps 地圖區<br />
-        下一階段會串接實際地圖
-      </div>
+      <h2>地圖</h2>
+      <div id="map"></div>
     </section>
 
     <section class="panel">
-      <h2>行程表</h2>
-
-      <div id="schedule"></div>
-
       <h2>景點資訊</h2>
-      <div class="info-row">
-        <div class="info-label">目前狀態</div>
-        <div>已完成三欄式介面</div>
-      </div>
-      <div class="info-row">
-        <div class="info-label">下一步</div>
-        <div>加入實際 Google Maps 地圖</div>
-      </div>
+      <p>目前測試：Google Maps 是否能成功載入。</p>
     </section>
   </main>
 
-  <script>
-    const placeInput = document.getElementById("placeInput");
-    const addBtn = document.getElementById("addBtn");
-    const placeList = document.getElementById("placeList");
-    const schedule = document.getElementById("schedule");
+  <script src="script.js"></script>
 
-    function updateSchedule() {
-      const cards = [...document.querySelectorAll(".place-card")];
-      schedule.innerHTML = "";
-
-      cards.forEach((card, index) => {
-        const name = card.querySelector("strong").textContent;
-        const item = document.createElement("div");
-        item.className = "route-item";
-        item.innerHTML = `
-          <strong>${String(9 + index).padStart(2, "0")}:00　${name}</strong><br>
-          <small>${index === cards.length - 1 ? "最後一站" : "前往下一站：約 15 分鐘"}</small>
-        `;
-        schedule.appendChild(item);
-      });
-    }
-
-    addBtn.addEventListener("click", () => {
-      const value = placeInput.value.trim();
-      if (!value) return;
-
-      const card = document.createElement("div");
-      card.className = "place-card";
-      card.draggable = true;
-      card.innerHTML = `
-        <strong>${value}</strong>
-        <small>建議停留 60 分鐘</small>
-      `;
-      placeList.appendChild(card);
-      placeInput.value = "";
-      updateSchedule();
-    });
-
-    placeInput.addEventListener("keydown", (event) => {
-      if (event.key === "Enter") addBtn.click();
-    });
-
-    let draggedCard = null;
-
-    placeList.addEventListener("dragstart", (event) => {
-      draggedCard = event.target.closest(".place-card");
-    });
-
-    placeList.addEventListener("dragover", (event) => {
-      event.preventDefault();
-      const target = event.target.closest(".place-card");
-      if (!target || target === draggedCard) return;
-
-      const rect = target.getBoundingClientRect();
-      const next = event.clientY > rect.top + rect.height / 2;
-      placeList.insertBefore(draggedCard, next ? target.nextSibling : target);
-    });
-
-    placeList.addEventListener("dragend", () => {
-      draggedCard = null;
-      updateSchedule();
-    });
-
-    updateSchedule();
+  <script
+    src="https://maps.googleapis.com/maps/api/js?key=AIzaSyDo0jDs1143sHcUI359D194SlX6mDzWmiM&callback=initMap"
+    async
+    defer>
   </script>
 </body>
 </html>
