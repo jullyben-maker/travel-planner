@@ -6,10 +6,56 @@ const schedule = document.getElementById("schedule");
 const placeInfo = document.getElementById("placeInfo");
 
 let draggedCard = null;
+const STORAGE_KEY = "travelPlannerPlaces";
 
 function updateMap(query) {
   const encodedQuery = encodeURIComponent(query);
   mapFrame.src = `https://www.google.com/maps?q=${encodedQuery}&output=embed`;
+}
+
+function getPlacesFromCards() {
+  return [...document.querySelectorAll(".place-card")].map((card) => {
+    return card.dataset.name || card.querySelector("strong").textContent;
+  });
+}
+
+function savePlaces() {
+  const places = getPlacesFromCards();
+  localStorage.setItem(STORAGE_KEY, JSON.stringify(places));
+}
+
+function loadPlaces() {
+  const saved = localStorage.getItem(STORAGE_KEY);
+
+  if (!saved) {
+    updateSchedule();
+    return;
+  }
+
+  try {
+    const places = JSON.parse(saved);
+
+    if (!Array.isArray(places)) {
+      updateSchedule();
+      return;
+    }
+
+    places.forEach((placeName) => {
+      const card = createPlaceCard(placeName);
+      placeList.appendChild(card);
+    });
+
+    if (places.length > 0) {
+      updateMap(places[0]);
+      updateInfo(places[0]);
+    }
+
+    updateSchedule();
+  } catch (error) {
+    console.error(error);
+    localStorage.removeItem(STORAGE_KEY);
+    updateSchedule();
+  }
 }
 
 function addPlace(name) {
@@ -28,6 +74,7 @@ function addPlace(name) {
   updateMap(placeName);
   updateInfo(placeName);
   updateSchedule();
+  savePlaces();
 }
 
 function createPlaceCard(placeName) {
@@ -53,8 +100,8 @@ function updateInfo(placeName) {
   placeInfo.innerHTML = `
     <p><strong>景點名稱：</strong>${placeName}</p>
     <p><strong>地圖狀態：</strong>已顯示 Google Maps 搜尋結果。</p>
-    <p><strong>目前版本：</strong>v1.1 拖曳排序版。</p>
-    <p><strong>下一階段：</strong>加入儲存行程，重新整理後不會消失。</p>
+    <p><strong>目前版本：</strong>v1.2 儲存行程版。</p>
+    <p><strong>下一階段：</strong>加入刪除景點與清空行程。</p>
   `;
 }
 
@@ -128,6 +175,7 @@ placeList.addEventListener("dragend", () => {
 
   draggedCard = null;
   updateSchedule();
+  savePlaces();
 });
 
-updateSchedule();
+loadPlaces();
