@@ -20,9 +20,22 @@ function addPlace(name) {
     return;
   }
 
+  const card = createPlaceCard(placeName);
+
+  placeList.appendChild(card);
+  placeInput.value = "";
+
+  updateMap(placeName);
+  updateInfo(placeName);
+  updateSchedule();
+}
+
+function createPlaceCard(placeName) {
   const card = document.createElement("div");
   card.className = "place-card";
   card.draggable = true;
+  card.dataset.name = placeName;
+
   card.innerHTML = `
     <strong>${placeName}</strong>
     <small>點擊可在地圖查看位置；拖曳可調整順序</small>
@@ -33,20 +46,15 @@ function addPlace(name) {
     updateInfo(placeName);
   });
 
-  placeList.appendChild(card);
-  placeInput.value = "";
-
-  updateMap(placeName);
-  updateInfo(placeName);
-  updateSchedule();
+  return card;
 }
 
 function updateInfo(placeName) {
   placeInfo.innerHTML = `
     <p><strong>景點名稱：</strong>${placeName}</p>
     <p><strong>地圖狀態：</strong>已顯示 Google Maps 搜尋結果。</p>
-    <p><strong>目前版本：</strong>v1.0 穩定版。</p>
-    <p><strong>下一階段：</strong>加入交通距離與路線規劃。</p>
+    <p><strong>目前版本：</strong>v1.1 拖曳排序版。</p>
+    <p><strong>下一階段：</strong>加入儲存行程，重新整理後不會消失。</p>
   `;
 }
 
@@ -60,7 +68,7 @@ function updateSchedule() {
   }
 
   cards.forEach((card, index) => {
-    const name = card.querySelector("strong").textContent;
+    const name = card.dataset.name || card.querySelector("strong").textContent;
     const hour = 9 + index;
     const time = `${String(hour).padStart(2, "0")}:00`;
 
@@ -87,6 +95,7 @@ placeInput.addEventListener("keydown", (event) => {
 
 placeList.addEventListener("dragstart", (event) => {
   draggedCard = event.target.closest(".place-card");
+
   if (draggedCard) {
     draggedCard.classList.add("dragging");
   }
@@ -108,6 +117,8 @@ placeList.addEventListener("dragover", (event) => {
     draggedCard,
     shouldInsertAfter ? target.nextSibling : target
   );
+
+  updateSchedule();
 });
 
 placeList.addEventListener("dragend", () => {
