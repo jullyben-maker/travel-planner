@@ -1,27 +1,33 @@
 let map;
-let service;
+let Place;
+let AdvancedMarkerElement;
 let markers = [];
 
-function initMap() {
+async function initMap() {
   const taichung = { lat: 24.143171, lng: 120.663268 };
 
-  map = new google.maps.Map(document.getElementById("map"), {
+  const { Map } = await google.maps.importLibrary("maps");
+  const markerLibrary = await google.maps.importLibrary("marker");
+  const placesLibrary = await google.maps.importLibrary("places");
+
+  AdvancedMarkerElement = markerLibrary.AdvancedMarkerElement;
+  Place = placesLibrary.Place;
+
+  map = new Map(document.getElementById("map"), {
     center: taichung,
     zoom: 14
   });
 
-  service = new google.maps.places.PlacesService(map);
-
-  const defaultMarker = new google.maps.Marker({
-    position: taichung,
+  const defaultMarker = new AdvancedMarkerElement({
     map: map,
+    position: taichung,
     title: "國立臺灣美術館"
   });
 
   markers.push(defaultMarker);
 
   setupSearch();
-  showInfo("地圖已載入，可以搜尋景點。");
+  showInfo("新版 Places API 已載入，可以搜尋景點。");
 }
 
 function setupSearch() {
@@ -44,7 +50,7 @@ function setupSearch() {
   });
 }
 
-function searchPlace(query) {
+async function searchPlace(query) {
   const keyword = query.trim();
 
   if (!keyword) {
@@ -54,42 +60,48 @@ function searchPlace(query) {
 
   showInfo("正在搜尋：「" + keyword + "」...");
 
-  const request = {
-    query: keyword,
-    fields: ["name", "geometry", "formatted_address", "rating", "place_id"]
-  };
+  try {
+    const response = await Place.searchByText({
+      textQuery: keyword,
+      fields: ["displayName", "formattedAddress", "location", "rating", "id"],
+      language: "zh-TW",
+      region: "TW",
+      maxResultCount: 1,
+      locationBias: {
+        center: { lat: 24.143171, lng: 120.663268 },
+        radius: 50000
+      }
+    });
 
-  service.findPlaceFromQuery(request, (results, status) => {
-    if (status !== google.maps.places.PlacesServiceStatus.OK) {
-      showInfo("搜尋失敗，狀態：" + status);
-      return;
-    }
+    const places = response.places || [];
 
-    if (!results || !results[0]) {
+    if (!places.length) {
       showInfo("找不到景點，請換一個關鍵字。");
       return;
     }
 
-    const place = results[0];
-    addPlace(place);
-  });
+    addPlace(places[0]);
+  } catch (error) {
+    console.error(error);
+    showInfo("搜尋失敗：" + (error.message || error));
+  }
 }
 
 function addPlace(place) {
-  if (!place.geometry || !place.geometry.location) {
+  if (!place.location) {
     showInfo("這個景點沒有座標資料。");
     return;
   }
 
-  const location = place.geometry.location;
+  const location = place.location;
 
   map.setCenter(location);
   map.setZoom(15);
 
-  const marker = new google.maps.Marker({
+  const marker = new AdvancedMarkerElement({
     map: map,
     position: location,
-    title: place.name
+    title: place.displayName
   });
 
   markers.push(marker);
@@ -99,17 +111,17 @@ function addPlace(place) {
   const card = document.createElement("div");
   card.className = "place-card";
   card.innerHTML = `
-    <strong>${place.name}</strong>
-    <small>${place.formatted_address || "未提供地址"}</small>
+    <strong>${place.displayName || "未命名景點"}</strong>
+    <small>${place.formattedAddress || "未提供地址"}</small>
   `;
 
   placeList.appendChild(card);
 
   showInfo(`
-    <p><strong>名稱：</strong>${place.name}</p>
-    <p><strong>地址：</strong>${place.formatted_address || "未提供地址"}</p>
+    <p><strong>名稱：</strong>${place.displayName || "未命名景點"}</p>
+    <p><strong>地址：</strong>${place.formattedAddress || "未提供地址"}</p>
     <p><strong>評分：</strong>${place.rating || "尚無評分"}</p>
-    <p><strong>Place ID：</strong>${place.place_id}</p>
+    <p><strong>Place ID：</strong>${place.id || "未提供"}</p>
   `);
 }
 
