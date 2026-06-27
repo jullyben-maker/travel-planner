@@ -1,119 +1,122 @@
-let map;
-let geocoder;
-let markers = [];
+const placeInput = document.getElementById("placeInput");
+const addPlaceBtn = document.getElementById("addPlaceBtn");
+const placeList = document.getElementById("placeList");
+const mapFrame = document.getElementById("mapFrame");
+const schedule = document.getElementById("schedule");
+const placeInfo = document.getElementById("placeInfo");
 
-function initMap() {
-  const taichung = { lat: 24.143171, lng: 120.663268 };
+let draggedCard = null;
 
-  map = new google.maps.Map(document.getElementById("map"), {
-    center: taichung,
-    zoom: 14
-  });
-
-  geocoder = new google.maps.Geocoder();
-
-  const defaultMarker = new google.maps.Marker({
-    map: map,
-    position: taichung,
-    title: "國立臺灣美術館"
-  });
-
-  markers.push(defaultMarker);
-
-  setupSearch();
-  showInfo("地點搜尋已載入。請輸入景點名稱。");
+function updateMap(query) {
+  const encodedQuery = encodeURIComponent(query);
+  mapFrame.src = `https://www.google.com/maps?q=${encodedQuery}&output=embed`;
 }
 
-function setupSearch() {
-  const input = document.getElementById("placeInput");
-  const button = document.getElementById("addPlaceBtn");
+function addPlace(name) {
+  const placeName = name.trim();
 
-  button.addEventListener("click", () => {
-    searchPlace(input.value);
-  });
-
-  input.addEventListener("keydown", (event) => {
-    if (event.key === "Enter") {
-      searchPlace(input.value);
-    }
-  });
-}
-
-function searchPlace(query) {
-  const keyword = query.trim();
-
-  if (!keyword) {
-    showInfo("請先輸入景點名稱。");
+  if (!placeName) {
+    alert("請先輸入景點名稱。");
     return;
   }
-
-  showInfo("正在搜尋：「" + keyword + "」...");
-
-  geocoder.geocode(
-    {
-      address: keyword,
-      region: "TW",
-      language: "zh-TW"
-    },
-    function(results, status) {
-      if (status !== "OK" || !results || results.length === 0) {
-        showInfo("搜尋失敗，狀態：" + status);
-        return;
-      }
-
-      const result = results[0];
-      addPlace(result);
-    }
-  );
-}
-
-function addPlace(result) {
-  const location = result.geometry.location;
-
-  map.setCenter(location);
-  map.setZoom(16);
-
-  const marker = new google.maps.Marker({
-    map: map,
-    position: location,
-    title: result.formatted_address
-  });
-
-  markers.push(marker);
-
-  const placeName =
-    result.address_components && result.address_components.length > 0
-      ? result.address_components[0].long_name
-      : result.formatted_address;
-
-  const placeList = document.getElementById("placeList");
 
   const card = document.createElement("div");
   card.className = "place-card";
+  card.draggable = true;
   card.innerHTML = `
     <strong>${placeName}</strong>
-    <small>${result.formatted_address || "未提供地址"}</small>
+    <small>點擊可在地圖查看位置；拖曳可調整順序</small>
   `;
 
-  placeList.appendChild(card);
+  card.addEventListener("click", () => {
+    updateMap(placeName);
+    updateInfo(placeName);
+  });
 
-  showInfo(`
-    <p><strong>名稱：</strong>${placeName}</p>
-    <p><strong>地址：</strong>${result.formatted_address || "未提供地址"}</p>
-    <p><strong>Place ID：</strong>${result.place_id || "未提供"}</p>
-    <p><strong>目前狀態：</strong>已用 Geocoder 搜尋成功，評分功能下一階段再處理。</p>
-  `);
+  placeList.appendChild(card);
+  placeInput.value = "";
+
+  updateMap(placeName);
+  updateInfo(placeName);
+  updateSchedule();
 }
 
-function showInfo(message) {
-  const placeInfo = document.getElementById("placeInfo");
+function updateInfo(placeName) {
+  placeInfo.innerHTML = `
+    <p><strong>景點名稱：</strong>${placeName}</p>
+    <p><strong>地圖狀態：</strong>已顯示 Google Maps 搜尋結果。</p>
+    <p><strong>目前版本：</strong>v1.0 穩定版。</p>
+    <p><strong>下一階段：</strong>加入交通距離與路線規劃。</p>
+  `;
+}
 
-  if (!placeInfo) {
-    console.log(message);
+function updateSchedule() {
+  const cards = [...document.querySelectorAll(".place-card")];
+  schedule.innerHTML = "";
+
+  if (cards.length === 0) {
+    schedule.innerHTML = "<p>尚未加入景點。</p>";
     return;
   }
 
-  placeInfo.innerHTML = message;
+  cards.forEach((card, index) => {
+    const name = card.querySelector("strong").textContent;
+    const hour = 9 + index;
+    const time = `${String(hour).padStart(2, "0")}:00`;
+
+    const item = document.createElement("div");
+    item.className = "route-item";
+    item.innerHTML = `
+      <strong>${time}　${name}</strong><br>
+      <small>${index === cards.length - 1 ? "最後一站" : "前往下一站：待計算"}</small>
+    `;
+
+    schedule.appendChild(item);
+  });
 }
 
-window.initMap = initMap;
+addPlaceBtn.addEventListener("click", () => {
+  addPlace(placeInput.value);
+});
+
+placeInput.addEventListener("keydown", (event) => {
+  if (event.key === "Enter") {
+    addPlace(placeInput.value);
+  }
+});
+
+placeList.addEventListener("dragstart", (event) => {
+  draggedCard = event.target.closest(".place-card");
+  if (draggedCard) {
+    draggedCard.classList.add("dragging");
+  }
+});
+
+placeList.addEventListener("dragover", (event) => {
+  event.preventDefault();
+
+  const target = event.target.closest(".place-card");
+
+  if (!target || target === draggedCard) {
+    return;
+  }
+
+  const rect = target.getBoundingClientRect();
+  const shouldInsertAfter = event.clientY > rect.top + rect.height / 2;
+
+  placeList.insertBefore(
+    draggedCard,
+    shouldInsertAfter ? target.nextSibling : target
+  );
+});
+
+placeList.addEventListener("dragend", () => {
+  if (draggedCard) {
+    draggedCard.classList.remove("dragging");
+  }
+
+  draggedCard = null;
+  updateSchedule();
+});
+
+updateSchedule();
