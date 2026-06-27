@@ -9,7 +9,7 @@
 <body>
   <header>
     <h1>Travel Planner</h1>
-    <div class="badge">v1.0 穩定版</div>
+    <div class="badge">v1.3 景點管理版</div>
   </header>
 
   <main class="layout">
@@ -21,7 +21,9 @@
         <button id="addPlaceBtn">加入</button>
       </div>
 
-      <p class="hint">加入後可拖曳排序。</p>
+      <button id="clearAllBtn" class="clear-btn">清空全部</button>
+
+      <p class="hint">可新增、刪除、拖曳排序，重新整理後會保留。</p>
       <div id="placeList"></div>
     </section>
 
@@ -41,11 +43,11 @@
 
       <h2>景點資訊</h2>
       <div id="placeInfo">
-        <p>輸入景點後，地圖會顯示實際位置。</p>
+        <p>輸入景點後，地圖會顯示 Google Maps 搜尋結果。</p>
       </div>
     </section>
   </main>
 
-  <script src="script.js?v=10"></script>
+  <script src="script.js?v=13"></script>
 </body>
 </html>
