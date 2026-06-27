@@ -9,40 +9,43 @@
 <body>
   <header>
     <h1>Travel Planner</h1>
-    <div class="badge">Google Maps 測試版</div>
+    <div class="badge">v1.0 穩定版</div>
   </header>
 
   <main class="layout">
     <section class="panel">
-<h2>行程景點</h2>
+      <h2>行程景點</h2>
 
-<div class="search-box">
-  <input id="placeInput" type="text" placeholder="搜尋景點，例如：國立臺灣美術館" />
-  <button id="addPlaceBtn">加入</button>
-</div>
+      <div class="search-box">
+        <input id="placeInput" type="text" placeholder="輸入景點，例如：國立臺灣美術館" />
+        <button id="addPlaceBtn">加入</button>
+      </div>
 
-<div id="placeList"></div>
+      <p class="hint">加入後可拖曳排序。</p>
+      <div id="placeList"></div>
     </section>
 
-    <section class="panel">
+    <section class="panel map-panel">
       <h2>地圖</h2>
-      <div id="map"></div>
+      <iframe
+        id="mapFrame"
+        src="https://www.google.com/maps?q=國立臺灣美術館&output=embed"
+        loading="lazy"
+        allowfullscreen>
+      </iframe>
     </section>
 
     <section class="panel">
-<h2>景點資訊</h2>
-<div id="placeInfo">
-  <p>搜尋並加入景點後，這裡會顯示景點資訊。</p>
-</div>
+      <h2>行程表</h2>
+      <div id="schedule"></div>
+
+      <h2>景點資訊</h2>
+      <div id="placeInfo">
+        <p>輸入景點後，地圖會顯示實際位置。</p>
+      </div>
     </section>
   </main>
 
-<script src="script.js?v=3"></script>
-
-<script
-  src="https://maps.googleapis.com/maps/api/js?key=你的_API_KEY&callback=initMap&language=zh-TW&region=TW&loading=async"
-  async
-  defer>
-</script>
+  <script src="script.js?v=10"></script>
 </body>
 </html>
