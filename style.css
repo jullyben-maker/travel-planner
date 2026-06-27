@@ -28,7 +28,7 @@ header h1 {
 
 .layout {
   display: grid;
-  grid-template-columns: 280px 1fr 320px;
+  grid-template-columns: 300px 1fr 340px;
   gap: 20px;
   padding: 20px;
   min-height: calc(100vh - 80px);
@@ -41,25 +41,14 @@ header h1 {
   box-shadow: 0 8px 24px rgba(0,0,0,0.08);
 }
 
-#map {
-  height: 520px;
-  border-radius: 18px;
-  overflow: hidden;
+.panel h2 {
+  margin-top: 0;
 }
 
-@media (max-width: 900px) {
-  .layout {
-    grid-template-columns: 1fr;
-  }
-
-  #map {
-    height: 360px;
-  }
-}
 .search-box {
   display: flex;
   gap: 8px;
-  margin-bottom: 16px;
+  margin-bottom: 10px;
 }
 
 .search-box input {
@@ -80,12 +69,22 @@ header h1 {
   font-size: 15px;
 }
 
+.hint {
+  color: #6b7280;
+  font-size: 14px;
+}
+
 .place-card {
   border: 1px solid #e5e7eb;
   border-radius: 14px;
   padding: 14px;
   margin-bottom: 12px;
   background: #f9fafb;
+  cursor: grab;
+}
+
+.place-card.dragging {
+  opacity: 0.5;
 }
 
 .place-card strong {
@@ -95,4 +94,33 @@ header h1 {
 
 .place-card small {
   color: #6b7280;
+}
+
+.map-panel iframe {
+  width: 100%;
+  height: 560px;
+  border: 0;
+  border-radius: 18px;
+}
+
+.route-item {
+  padding: 12px;
+  border-left: 4px solid #2563eb;
+  background: #eff6ff;
+  border-radius: 10px;
+  margin-bottom: 12px;
+}
+
+#placeInfo {
+  line-height: 1.7;
+}
+
+@media (max-width: 980px) {
+  .layout {
+    grid-template-columns: 1fr;
+  }
+
+  .map-panel iframe {
+    height: 380px;
+  }
 }
