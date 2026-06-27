@@ -19,7 +19,7 @@ async function initMap() {
   });
 
   const defaultMarker = new AdvancedMarkerElement({
-    map: map,
+    map,
     position: taichung,
     title: "國立臺灣美術館"
   });
@@ -27,7 +27,7 @@ async function initMap() {
   markers.push(defaultMarker);
 
   setupSearch();
-  showInfo("新版 Places API 已載入，可以搜尋景點。");
+  showInfo("新版搜尋模組已載入。請輸入景點名稱。");
 }
 
 function setupSearch() {
@@ -35,7 +35,7 @@ function setupSearch() {
   const button = document.getElementById("addPlaceBtn");
 
   if (!input || !button) {
-    showInfo("找不到搜尋框或加入按鈕，請檢查 index.html。");
+    showInfo("找不到搜尋框或加入按鈕。請檢查 index.html。");
     return;
   }
 
@@ -61,21 +61,13 @@ async function searchPlace(query) {
   showInfo("正在搜尋：「" + keyword + "」...");
 
   try {
-    const response = await Place.searchByText({
+    const { places } = await Place.searchByText({
       textQuery: keyword,
       fields: ["displayName", "formattedAddress", "location", "rating", "id"],
-      language: "zh-TW",
-      region: "TW",
-      maxResultCount: 1,
-      locationBias: {
-        center: { lat: 24.143171, lng: 120.663268 },
-        radius: 50000
-      }
+      maxResultCount: 1
     });
 
-    const places = response.places || [];
-
-    if (!places.length) {
+    if (!places || places.length === 0) {
       showInfo("找不到景點，請換一個關鍵字。");
       return;
     }
@@ -83,7 +75,7 @@ async function searchPlace(query) {
     addPlace(places[0]);
   } catch (error) {
     console.error(error);
-    showInfo("搜尋失敗：" + (error.message || error));
+    showInfo("搜尋失敗：" + (error.message || String(error)));
   }
 }
 
@@ -99,7 +91,7 @@ function addPlace(place) {
   map.setZoom(15);
 
   const marker = new AdvancedMarkerElement({
-    map: map,
+    map,
     position: location,
     title: place.displayName
   });
