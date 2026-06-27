@@ -1,12 +1,16 @@
 const placeInput = document.getElementById("placeInput");
 const addPlaceBtn = document.getElementById("addPlaceBtn");
+const clearAllBtn = document.getElementById("clearAllBtn");
 const placeList = document.getElementById("placeList");
 const mapFrame = document.getElementById("mapFrame");
 const schedule = document.getElementById("schedule");
 const placeInfo = document.getElementById("placeInfo");
 
-let draggedCard = null;
 const STORAGE_KEY = "travelPlannerPlaces";
+const DEFAULT_PLACE = "國立臺灣美術館";
+
+let draggedCard = null;
+let activePlace = null;
 
 function updateMap(query) {
   const encodedQuery = encodeURIComponent(query);
@@ -15,7 +19,7 @@ function updateMap(query) {
 
 function getPlacesFromCards() {
   return [...document.querySelectorAll(".place-card")].map((card) => {
-    return card.dataset.name || card.querySelector("strong").textContent;
+    return card.dataset.name;
   });
 }
 
@@ -28,15 +32,15 @@ function loadPlaces() {
   const saved = localStorage.getItem(STORAGE_KEY);
 
   if (!saved) {
-    updateSchedule();
+    resetEmptyState();
     return;
   }
 
   try {
     const places = JSON.parse(saved);
 
-    if (!Array.isArray(places)) {
-      updateSchedule();
+    if (!Array.isArray(places) || places.length === 0) {
+      resetEmptyState();
       return;
     }
 
@@ -45,16 +49,11 @@ function loadPlaces() {
       placeList.appendChild(card);
     });
 
-    if (places.length > 0) {
-      updateMap(places[0]);
-      updateInfo(places[0]);
-    }
-
+    setActivePlace(places[0]);
     updateSchedule();
   } catch (error) {
-    console.error(error);
     localStorage.removeItem(STORAGE_KEY);
-    updateSchedule();
+    resetEmptyState();
   }
 }
 
@@ -67,12 +66,11 @@ function addPlace(name) {
   }
 
   const card = createPlaceCard(placeName);
-
   placeList.appendChild(card);
+
   placeInput.value = "";
 
-  updateMap(placeName);
-  updateInfo(placeName);
+  setActivePlace(placeName);
   updateSchedule();
   savePlaces();
 }
@@ -84,24 +82,92 @@ function createPlaceCard(placeName) {
   card.dataset.name = placeName;
 
   card.innerHTML = `
-    <strong>${placeName}</strong>
-    <small>點擊可在地圖查看位置；拖曳可調整順序</small>
+    <div class="place-content">
+      <strong>${placeName}</strong>
+      <small>點擊查看地圖；拖曳調整順序</small>
+    </div>
+    <button class="delete-btn" type="button" aria-label="刪除 ${placeName}">×</button>
   `;
 
   card.addEventListener("click", () => {
-    updateMap(placeName);
-    updateInfo(placeName);
+    setActivePlace(placeName);
+  });
+
+  const deleteBtn = card.querySelector(".delete-btn");
+  deleteBtn.addEventListener("click", (event) => {
+    event.stopPropagation();
+    deletePlace(card);
   });
 
   return card;
+}
+
+function deletePlace(card) {
+  const deletedName = card.dataset.name;
+  card.remove();
+
+  const remainingPlaces = getPlacesFromCards();
+
+  if (remainingPlaces.length === 0) {
+    localStorage.removeItem(STORAGE_KEY);
+    resetEmptyState();
+    return;
+  }
+
+  if (activePlace === deletedName) {
+    setActivePlace(remainingPlaces[0]);
+  }
+
+  updateSchedule();
+  savePlaces();
+}
+
+function clearAllPlaces() {
+  const hasPlaces = document.querySelectorAll(".place-card").length > 0;
+
+  if (!hasPlaces) {
+    return;
+  }
+
+  const confirmed = confirm("確定要清空全部景點嗎？");
+
+  if (!confirmed) {
+    return;
+  }
+
+  placeList.innerHTML = "";
+  localStorage.removeItem(STORAGE_KEY);
+  resetEmptyState();
+}
+
+function setActivePlace(placeName) {
+  activePlace = placeName;
+
+  document.querySelectorAll(".place-card").forEach((card) => {
+    card.classList.toggle("active", card.dataset.name === placeName);
+  });
+
+  updateMap(placeName);
+  updateInfo(placeName);
+}
+
+function resetEmptyState() {
+  activePlace = null;
+  updateMap(DEFAULT_PLACE);
+  updateSchedule();
+
+  placeInfo.innerHTML = `
+    <p>尚未加入景點。</p>
+    <p><strong>提示：</strong>請在左側輸入景點名稱，建立你的行程。</p>
+  `;
 }
 
 function updateInfo(placeName) {
   placeInfo.innerHTML = `
     <p><strong>景點名稱：</strong>${placeName}</p>
     <p><strong>地圖狀態：</strong>已顯示 Google Maps 搜尋結果。</p>
-    <p><strong>目前版本：</strong>v1.2 儲存行程版。</p>
-    <p><strong>下一階段：</strong>加入刪除景點與清空行程。</p>
+    <p><strong>目前版本：</strong>v1.3 景點管理版。</p>
+    <p><strong>新增功能：</strong>刪除景點、清空全部、目前景點高亮。</p>
   `;
 }
 
@@ -115,7 +181,7 @@ function updateSchedule() {
   }
 
   cards.forEach((card, index) => {
-    const name = card.dataset.name || card.querySelector("strong").textContent;
+    const name = card.dataset.name;
     const hour = 9 + index;
     const time = `${String(hour).padStart(2, "0")}:00`;
 
@@ -132,6 +198,10 @@ function updateSchedule() {
 
 addPlaceBtn.addEventListener("click", () => {
   addPlace(placeInput.value);
+});
+
+clearAllBtn.addEventListener("click", () => {
+  clearAllPlaces();
 });
 
 placeInput.addEventListener("keydown", (event) => {
