@@ -28,7 +28,7 @@ header h1 {
 
 .layout {
   display: grid;
-  grid-template-columns: 300px 1fr 340px;
+  grid-template-columns: 320px 1fr 360px;
   gap: 20px;
   padding: 20px;
   min-height: calc(100vh - 80px);
@@ -56,7 +56,8 @@ header h1 {
 }
 
 .search-box button,
-.clear-btn {
+.clear-btn,
+.save-btn {
   padding: 12px 16px;
   border: none;
   border-radius: 10px;
@@ -83,9 +84,6 @@ header h1 {
   padding: 14px;
   margin-bottom: 12px;
   background: #f9fafb;
-  display: flex;
-  justify-content: space-between;
-  gap: 12px;
   cursor: grab;
 }
 
@@ -98,12 +96,18 @@ header h1 {
   opacity: 0.5;
 }
 
-.place-content strong {
+.place-header {
+  display: flex;
+  justify-content: space-between;
+  gap: 12px;
+}
+
+.place-title strong {
   display: block;
   margin-bottom: 6px;
 }
 
-.place-content small {
+.place-title small {
   color: #6b7280;
 }
 
@@ -115,9 +119,46 @@ header h1 {
   cursor: pointer;
 }
 
+.place-editor {
+  margin-top: 12px;
+  display: none;
+}
+
+.place-card.active .place-editor {
+  display: block;
+}
+
+.place-editor label {
+  display: block;
+  font-size: 14px;
+  color: #374151;
+  margin: 10px 0 6px;
+}
+
+.place-editor input,
+.place-editor textarea {
+  width: 100%;
+  box-sizing: border-box;
+  border: 1px solid #d1d5db;
+  border-radius: 10px;
+  padding: 10px;
+  font-family: inherit;
+  font-size: 14px;
+}
+
+.place-editor textarea {
+  min-height: 70px;
+  resize: vertical;
+}
+
+.save-btn {
+  width: 100%;
+  margin-top: 10px;
+}
+
 .map-panel iframe {
   width: 100%;
-  height: 560px;
+  height: 580px;
   border: 0;
   border-radius: 18px;
 }
@@ -128,6 +169,16 @@ header h1 {
   background: #eff6ff;
   border-radius: 10px;
   margin-bottom: 12px;
+}
+
+.route-item small {
+  color: #374151;
+}
+
+.note-preview {
+  color: #6b7280;
+  font-size: 13px;
+  margin-top: 6px;
 }
 
 #placeInfo {
