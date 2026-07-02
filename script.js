@@ -10,41 +10,108 @@ const STORAGE_KEY = "travelPlannerPlaces";
 const DEFAULT_PLACE = "國立臺灣美術館";
 
 let draggedCard = null;
-let activePlace = null;
+let activePlaceId = null;
+
+function createPlaceData(name) {
+  return {
+    id: Date.now().toString() + Math.random().toString(16).slice(2),
+    name: name,
+    duration: 60,
+    note: ""
+  };
+}
 
 function updateMap(placeName) {
   mapFrame.src = `https://www.google.com/maps?q=${encodeURIComponent(placeName)}&output=embed`;
 }
 
-function getPlaces() {
-  return [...document.querySelectorAll(".place-card")].map(card => card.dataset.name);
+function getPlacesFromCards() {
+  return [...document.querySelectorAll(".place-card")].map((card) => {
+    return {
+      id: card.dataset.id,
+      name: card.dataset.name,
+      duration: Number(card.dataset.duration) || 60,
+      note: card.dataset.note || ""
+    };
+  });
 }
 
 function savePlaces() {
-  localStorage.setItem(STORAGE_KEY, JSON.stringify(getPlaces()));
+  localStorage.setItem(STORAGE_KEY, JSON.stringify(getPlacesFromCards()));
 }
 
-function createPlaceCard(placeName) {
+function loadPlacesFromStorage() {
+  const saved = localStorage.getItem(STORAGE_KEY);
+
+  if (!saved) return [];
+
+  try {
+    const parsed = JSON.parse(saved);
+
+    if (!Array.isArray(parsed)) return [];
+
+    return parsed
+      .map((item) => {
+        if (typeof item === "string") {
+          return createPlaceData(item);
+        }
+
+        return {
+          id: item.id || Date.now().toString() + Math.random().toString(16).slice(2),
+          name: item.name || "未命名景點",
+          duration: Number(item.duration) || 60,
+          note: item.note || ""
+        };
+      })
+      .filter((item) => item.name.trim() !== "");
+  } catch {
+    localStorage.removeItem(STORAGE_KEY);
+    return [];
+  }
+}
+
+function createPlaceCard(place) {
   const card = document.createElement("div");
   card.className = "place-card";
   card.draggable = true;
-  card.dataset.name = placeName;
+  card.dataset.id = place.id;
+  card.dataset.name = place.name;
+  card.dataset.duration = place.duration;
+  card.dataset.note = place.note;
 
   card.innerHTML = `
-    <div class="place-content">
-      <strong>${placeName}</strong>
-      <small>點擊查看地圖；拖曳調整順序</small>
+    <div class="place-header">
+      <div class="place-title">
+        <strong>${place.name}</strong>
+        <small>停留 ${place.duration} 分鐘</small>
+        <div class="note-preview">${place.note ? "備註：" + place.note : "尚無備註"}</div>
+      </div>
+      <button class="delete-btn" type="button">×</button>
     </div>
-    <button class="delete-btn" type="button">×</button>
+
+    <div class="place-editor">
+      <label>停留時間（分鐘）</label>
+      <input class="duration-input" type="number" min="15" step="15" value="${place.duration}" />
+
+      <label>備註</label>
+      <textarea class="note-input" placeholder="例如：想拍照、吃午餐、買伴手禮">${place.note}</textarea>
+
+      <button class="save-btn" type="button">儲存設定</button>
+    </div>
   `;
 
-  card.querySelector(".place-content").addEventListener("click", () => {
-    setActivePlace(placeName);
+  card.querySelector(".place-header").addEventListener("click", () => {
+    setActivePlace(place.id);
   });
 
   card.querySelector(".delete-btn").addEventListener("click", (event) => {
     event.stopPropagation();
     deletePlace(card);
+  });
+
+  card.querySelector(".save-btn").addEventListener("click", (event) => {
+    event.stopPropagation();
+    saveCardSettings(card);
   });
 
   return card;
@@ -58,20 +125,40 @@ function addPlace(placeName) {
     return;
   }
 
-  const card = createPlaceCard(name);
-  placeList.appendChild(card);
+  const place = createPlaceData(name);
+  const card = createPlaceCard(place);
 
+  placeList.appendChild(card);
   placeInput.value = "";
-  setActivePlace(name);
+
+  setActivePlace(place.id);
+  updateSchedule();
+  savePlaces();
+}
+
+function saveCardSettings(card) {
+  const durationInput = card.querySelector(".duration-input");
+  const noteInput = card.querySelector(".note-input");
+
+  const duration = Math.max(15, Number(durationInput.value) || 60);
+  const note = noteInput.value.trim();
+
+  card.dataset.duration = duration;
+  card.dataset.note = note;
+
+  card.querySelector(".place-title small").textContent = `停留 ${duration} 分鐘`;
+  card.querySelector(".note-preview").textContent = note ? `備註：${note}` : "尚無備註";
+
+  updateInfo(card.dataset.name, duration, note);
   updateSchedule();
   savePlaces();
 }
 
 function deletePlace(card) {
-  const deletedName = card.dataset.name;
+  const deletedId = card.dataset.id;
   card.remove();
 
-  const remaining = getPlaces();
+  const remaining = [...document.querySelectorAll(".place-card")];
 
   if (remaining.length === 0) {
     localStorage.removeItem(STORAGE_KEY);
@@ -79,8 +166,8 @@ function deletePlace(card) {
     return;
   }
 
-  if (activePlace === deletedName) {
-    setActivePlace(remaining[0]);
+  if (activePlaceId === deletedId) {
+    setActivePlace(remaining[0].dataset.id);
   }
 
   updateSchedule();
@@ -88,7 +175,7 @@ function deletePlace(card) {
 }
 
 function clearAllPlaces() {
-  if (getPlaces().length === 0) return;
+  if (document.querySelectorAll(".place-card").length === 0) return;
 
   if (!confirm("確定要清空全部景點嗎？")) return;
 
@@ -97,28 +184,36 @@ function clearAllPlaces() {
   resetEmptyState();
 }
 
-function setActivePlace(placeName) {
-  activePlace = placeName;
+function setActivePlace(placeId) {
+  activePlaceId = placeId;
 
-  document.querySelectorAll(".place-card").forEach(card => {
-    card.classList.toggle("active", card.dataset.name === placeName);
+  document.querySelectorAll(".place-card").forEach((card) => {
+    card.classList.toggle("active", card.dataset.id === placeId);
   });
 
-  updateMap(placeName);
-  updateInfo(placeName);
+  const activeCard = document.querySelector(`.place-card[data-id="${placeId}"]`);
+
+  if (!activeCard) return;
+
+  updateMap(activeCard.dataset.name);
+  updateInfo(
+    activeCard.dataset.name,
+    Number(activeCard.dataset.duration) || 60,
+    activeCard.dataset.note || ""
+  );
 }
 
-function updateInfo(placeName) {
+function updateInfo(name, duration, note) {
   placeInfo.innerHTML = `
-    <p><strong>景點名稱：</strong>${placeName}</p>
-    <p><strong>地圖狀態：</strong>已顯示 Google Maps 搜尋結果。</p>
-    <p><strong>目前版本：</strong>v1.3 RC1 景點管理版。</p>
-    <p><strong>功能：</strong>新增、刪除、清空、拖曳排序、自動儲存。</p>
+    <p><strong>景點名稱：</strong>${name}</p>
+    <p><strong>停留時間：</strong>${duration} 分鐘</p>
+    <p><strong>備註：</strong>${note || "尚無備註"}</p>
+    <p><strong>目前版本：</strong>v1.4 停留時間與備註版。</p>
   `;
 }
 
 function updateSchedule() {
-  const places = getPlaces();
+  const places = getPlacesFromCards();
   schedule.innerHTML = "";
 
   if (places.length === 0) {
@@ -126,20 +221,29 @@ function updateSchedule() {
     return;
   }
 
-  places.forEach((name, index) => {
-    const time = `${String(9 + index).padStart(2, "0")}:00`;
+  let currentMinutes = 9 * 60;
+
+  places.forEach((place, index) => {
+    const startHour = Math.floor(currentMinutes / 60);
+    const startMinute = currentMinutes % 60;
+    const startTime = `${String(startHour).padStart(2, "0")}:${String(startMinute).padStart(2, "0")}`;
+
     const item = document.createElement("div");
     item.className = "route-item";
     item.innerHTML = `
-      <strong>${time}　${name}</strong><br>
-      <small>${index === places.length - 1 ? "最後一站" : "前往下一站：待計算"}</small>
+      <strong>${startTime}　${place.name}</strong><br>
+      <small>停留 ${place.duration} 分鐘</small>
+      ${place.note ? `<div class="note-preview">備註：${place.note}</div>` : ""}
     `;
+
     schedule.appendChild(item);
+
+    currentMinutes += place.duration;
   });
 }
 
 function resetEmptyState() {
-  activePlace = null;
+  activePlaceId = null;
   updateMap(DEFAULT_PLACE);
   updateSchedule();
 
@@ -149,32 +253,21 @@ function resetEmptyState() {
   `;
 }
 
-function loadPlaces() {
-  const saved = localStorage.getItem(STORAGE_KEY);
+function loadInitialPlaces() {
+  const places = loadPlacesFromStorage();
 
-  if (!saved) {
+  if (places.length === 0) {
     resetEmptyState();
     return;
   }
 
-  try {
-    const places = JSON.parse(saved);
+  places.forEach((place) => {
+    placeList.appendChild(createPlaceCard(place));
+  });
 
-    if (!Array.isArray(places) || places.length === 0) {
-      resetEmptyState();
-      return;
-    }
-
-    places.forEach(name => {
-      placeList.appendChild(createPlaceCard(name));
-    });
-
-    setActivePlace(places[0]);
-    updateSchedule();
-  } catch {
-    localStorage.removeItem(STORAGE_KEY);
-    resetEmptyState();
-  }
+  setActivePlace(places[0].id);
+  updateSchedule();
+  savePlaces();
 }
 
 addPlaceBtn.addEventListener("click", () => {
@@ -219,4 +312,4 @@ placeList.addEventListener("dragend", () => {
   savePlaces();
 });
 
-loadPlaces();
+loadInitialPlaces();
